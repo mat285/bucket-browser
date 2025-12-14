@@ -5,11 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:backend": "(cd backend && go run main.go)",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "docker:build": "docker build --cache-from registry.k8s.nori.ninja/bucket-browser:latest -t registry.k8s.nori.ninja/bucket-browser:latest -t registry.k8s.nori.ninja/bucket-browser:$(git rev-parse --short HEAD) --platform linux/amd64 -f Dockerfile --push ."
+    "preview": "vite preview"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

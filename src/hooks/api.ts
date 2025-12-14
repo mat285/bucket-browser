@@ -59,6 +59,9 @@ export const useApiClient = (credentials?: Credentials): Client => {
             });
         },
         listObjects: async (bucketName: string, prefix: string, continuationToken?: string) => {
+            if (!prefix.endsWith('/')) {
+                prefix = prefix + '/';
+            }
             const headers: Record<string, string> = {};
             if (continuationToken) {
                 headers['X-Continuation-Token'] = continuationToken;
@@ -119,5 +122,6 @@ const joinPath = (...paths: string[]) => {
     paths.forEach((path) => {
         flat.push(...path.split('/'));
     });
-    return '/' + flat.filter((path: string) => path !== '').join('/');
+    const trailingSlash = paths[paths.length - 1].endsWith('/') ? '/' : '';
+    return '/' + flat.filter((path: string) => path !== '').join('/') + trailingSlash;
 }

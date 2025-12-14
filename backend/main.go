@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -117,8 +118,13 @@ func (s *Server) NotFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ServeUI(w http.ResponseWriter, r *http.Request) {
-	fs := http.FileServer(http.Dir("dist"))
-	fs.ServeHTTP(w, r)
+	if strings.Contains(r.URL.Path, "assets") {
+		fs := http.FileServer(http.Dir(s.UIDirectory))
+		fs.ServeHTTP(w, r)
+	} else {
+		http.ServeFile(w, r, path.Join(s.UIDirectory, "index.html"))
+		fmt.Printf("serving index.html from %s\n", path.Join(s.UIDirectory, "index.html"))
+	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -224,9 +230,9 @@ func (s *Server) ListObjects(w http.ResponseWriter, r *http.Request) {
 	}
 	bucket := r.PathValue("bucket")
 	prefix := r.PathValue("prefix")
-	if !strings.HasSuffix(prefix, "/") {
-		prefix = prefix + "/"
-	}
+	// if !strings.HasSuffix(prefix, "/") {
+	// 	prefix = prefix + "/"
+	// }
 	continuationToken := r.URL.Query().Get("continuationToken")
 	limitQuery := r.URL.Query().Get("limit")
 	skipQuery := r.URL.Query().Get("skip")
