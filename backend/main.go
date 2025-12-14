@@ -89,6 +89,8 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /api/v1/objects/{bucket}/{prefix...}", s.ListObjects)
 	s.mux.HandleFunc("GET /api/v1/object-info/{bucket}/{object...}", s.GetObjectInfo)
 	s.mux.HandleFunc("GET /api/v1/object-data/{bucket}/{object...}", s.GetObjectData)
+
+	s.mux.HandleFunc("DELETE /api/v1/objects/{bucket}/{object...}", s.DeleteObjects)
 	s.mux.HandleFunc("/", s.NotFound)
 }
 
@@ -356,4 +358,29 @@ func (s *Server) GetObjectData(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 	fmt.Println("handled get object data request")
+}
+
+func (s *Server) DeleteObjects(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("handling delete objects request")
+	client, err := s.clientForRequest(r)
+	if err != nil {
+		fmt.Printf("error creating client: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	bucket := r.PathValue("bucket")
+	objects := r.PathValue("object")
+	fmt.Printf("deleting objects for bucket: %s, objects: %s\n", bucket, objects)
+	err = client.RemoveObject(bucket, objects)
+	if err != nil {
+		fmt.Printf("error deleting object: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	okay, _ := json.Marshal("OK")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(okay)
+	fmt.Println("handled delete objects request")
 }
