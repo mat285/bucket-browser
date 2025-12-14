@@ -9,10 +9,7 @@ ARG TARGETOS
 
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /backend main.go
 
-FROM node:22-slim AS ui-builder
-
-# ENV PNPM_HOME="/pnpm"
-# ENV PATH="$PNPM_HOME:$PATH"
+FROM --platform=$BUILDPLATFORM node:22-slim AS ui-builder
 RUN corepack enable
 
 WORKDIR /var/code/frontend
