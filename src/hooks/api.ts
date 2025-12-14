@@ -7,6 +7,7 @@ export interface Client {
     listObjects: (bucketName: string, prefix: string, continuationToken?: string) => Promise<ListObjectsResponse>;
     getObjectInfo: (bucketName: string, objectKey: string) => Promise<Object>;
     getObjectData: (bucketName: string, objectKey: string) => Promise<Blob>;
+    deleteObject: (bucketName: string, objectKey: string) => Promise<void>;
 }
 
 export const useOptionalApiClient = (credentials?: Credentials): Client | null => {
@@ -20,7 +21,13 @@ export const useOptionalApiClient = (credentials?: Credentials): Client | null =
 
 export const useApiClient = (credentials?: Credentials): Client => {
     credentials = credentials ?? getCredentials() ?? { accessKeyId: '', secretAccessKey: '' };
+    const doDelete = async (path: string, headers?: Record<string, string>) => {
+        return doReq('DELETE', path, undefined, headers);
+    }
     const doGet = async (path: string, queryParams?: Record<string, string>, headers?: Record<string, string>) => {
+        return doReq('GET', path, queryParams, headers);
+    }
+    const doReq = async (method: string, path: string, queryParams?: Record<string, string>, headers?: Record<string, string>) => {
         const urlParams = new URLSearchParams();
         if (queryParams) {
             for (const [key, value] of Object.entries(queryParams)) {
@@ -78,6 +85,13 @@ export const useApiClient = (credentials?: Credentials): Client => {
                 console.error(err);
                 throw err;
             });
+        },
+        deleteObject: async (bucketName: string, objectKey: string) => {
+            const {response} = await doDelete(`objects/${bucketName}/${objectKey}`);
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return;
         },
     }
 }
