@@ -23,7 +23,16 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	server := NewServer("ceph3.ts.k8s.nori.ninja", 8080)
+	uiDirectory := "./dist"
+	if _, err := os.Stat(uiDirectory); os.IsNotExist(err) {
+		uiDirectory = "../dist"
+		if _, err := os.Stat(uiDirectory); err != nil {
+			fmt.Printf("UI directory %s does not exist\n", uiDirectory)
+			os.Exit(1)
+		}
+	}
+
+	server := NewServer("ceph3.ts.k8s.nori.ninja", uiDirectory, 8080)
 	err := server.Start(ctx)
 	if err != nil {
 		fmt.Printf("error starting server: %s\n", err)
@@ -51,7 +60,8 @@ type ObjectCacheEntry struct {
 }
 
 type Server struct {
-	EndPoint string
+	EndPoint    string
+	UIDirectory string
 
 	mux    *http.ServeMux
 	server *http.Server
@@ -63,12 +73,13 @@ type Server struct {
 	objectCacheMutex sync.Mutex
 }
 
-func NewServer(endPoint string, port int) *Server {
+func NewServer(endPoint, uiDirectory string, port int) *Server {
 	if port == 0 {
 		port = 8080
 	}
 	s := &Server{
 		EndPoint:         endPoint,
+		UIDirectory:      uiDirectory,
 		mux:              http.NewServeMux(),
 		objectCache:      make(map[string]ObjectCacheEntry),
 		objectCacheMutex: sync.Mutex{},
@@ -95,8 +106,19 @@ func (s *Server) setupRoutes() {
 }
 
 func (s *Server) NotFound(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("not found: %s %s\n", r.Method, r.URL.Path)
-	http.Error(w, "Not Found", http.StatusNotFound)
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	if strings.HasPrefix(path, "api/v1/") {
+		fmt.Printf("not found: %s %s\n", r.Method, r.URL.Path)
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+	s.ServeUI(w, r)
+
+}
+
+func (s *Server) ServeUI(w http.ResponseWriter, r *http.Request) {
+	fs := http.FileServer(http.Dir("dist"))
+	fs.ServeHTTP(w, r)
 }
 
 func (s *Server) Start(ctx context.Context) error {

@@ -1,5 +1,4 @@
 import { getCredentials, type Credentials } from "@/state/credentials";
-// import * as Minio from 'minio';
 import { type Bucket, type ListObjectsResponse, type Object } from "./types";
 
 export interface Client {
@@ -38,6 +37,7 @@ export const useApiClient = (credentials?: Credentials): Client => {
         const url = joinPath('/api/v1/', path)  + params;
         console.log('fetching', url);
         const response = await fetch(url, {
+            method,
             headers: {
                 'AccessKeyId': credentials?.accessKeyId ?? '',
                 'SecretAccessKey': credentials?.secretAccessKey ?? '',
