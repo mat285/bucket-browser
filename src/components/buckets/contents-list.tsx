@@ -24,7 +24,7 @@ const BucketsContentsList = ({ bucketName, path }: BucketContentsListProps) => {
         window.location.href = redirectPath;
     }
 
-    const PAGE_SIZE = 100;
+    const PAGE_SIZE = 20;
 
     const fetchObjects = async () => {
         if (!bucketName) {
@@ -62,7 +62,7 @@ const BucketsContentsList = ({ bucketName, path }: BucketContentsListProps) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{bucketName}</CardTitle>
+                <CardTitle>{`${bucketName}/${path}`}</CardTitle>
             </CardHeader>
             <CardContent>
                 {loading && (<Spinner className="size-4 animate-spin items-center justify-center"/>)}
@@ -98,7 +98,7 @@ const ObjectsPage = ({objects, onClick, initialPageNumber, pageSize}: ObjectsPag
 }
 
 const PaginationComponent = ({pageNumber, pageCount, setPageNumber}: {pageNumber: number, pageCount: number, setPageNumber: (pageNumber: number) => void}) => {
-    const pageNumbers: number[] = [];
+    let pageNumbers: number[] = [];
     if (pageNumber == 0) {
         pageNumbers.push(0, 1, 2);
     } else if (pageNumber == pageCount - 1) {
@@ -106,6 +106,8 @@ const PaginationComponent = ({pageNumber, pageCount, setPageNumber}: {pageNumber
     } else {
         pageNumbers.push(pageNumber - 1, pageNumber, pageNumber + 1);
     }
+
+    pageNumbers = pageNumbers.filter((pageNumber) => pageNumber < pageCount && pageNumber >= 0);
 
     const onClickPrevious = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -137,7 +139,7 @@ const PaginationComponent = ({pageNumber, pageCount, setPageNumber}: {pageNumber
                         <PaginationLink className={pageIndex === pageNumber ? 'bg-primary text-primary-foreground' : ''} href="#" onClick={(e) => onClickPage(e, pageIndex)}>{pageIndex+1}</PaginationLink>
                     </PaginationItem>
                 ))}
-                <PaginationNext onClick={(e) => onClickNext(e)} />
+                <PaginationNext type="button" onClick={(e) => onClickNext(e)} />
             </PaginationContent>
         </Pagination>
     )
