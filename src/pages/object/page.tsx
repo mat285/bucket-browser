@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useOptionalApiClient } from "@/hooks/api";
+import { optionalApiClient } from "@/hooks/api";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import type { Object } from "@/hooks/types";
 
 const ObjectPage = () => {
     const location = useLocation();
-    const client = useOptionalApiClient();
+    const client = optionalApiClient();
     const [object, setObject] = useState<Object | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ const ObjectPage = () => {
                 {!loading && error && (<div><span>error: {error}</span></div>)}
                 {!loading && !error && object && (<div><span>object: {JSON.stringify(object)}</span></div>)}
             </CardContent>
-        </Card> 
+        </Card>
     )
 }
 

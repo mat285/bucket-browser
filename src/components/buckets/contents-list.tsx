@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { useNavigation } from "react-router-dom";
-import { useOptionalApiClient } from "@/hooks/api";
+import { optionalApiClient } from "@/hooks/api";
 import { type Object } from "@/hooks/types";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Spinner } from "../ui/spinner";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination";
 
 export interface BucketContentsListProps {
     bucketName: string;
@@ -13,55 +13,45 @@ export interface BucketContentsListProps {
 
 
 const BucketsContentsList = ({ bucketName, path }: BucketContentsListProps) => {
-    const location = useLocation();
-    const client = useOptionalApiClient();
-    const navigate = useNavigate();
     const [objects, setObjects] = useState<Object[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [statePath, setStatePath] = useState<string>(path);
-
     
 
-    const onClick = (object: Object) => {
-        if (object.isDirectory) {
-            navigate(`/bucket/${bucketName}/${object.key}`);
-            const newPath = object.key ?? path;
-            if (newPath !== path) {
-                setStatePath(newPath);
-                setLoading(true);
-            }
-        } else {
-            navigate(`/object/${bucketName}/${object.key}`);
+    const onClick = async (object: Object) => {
+        const redirectPath = object.isDirectory ? `/bucket/${bucketName}/${object.key}` : `/object/${bucketName}/${object.key}/`;
+        // window.location.replace(redirectPath);
+        window.location.href = redirectPath;
+    }
+
+    const PAGE_SIZE = 100;
+
+    const fetchObjects = async () => {
+        if (!bucketName) {
+            throw new Error('Bucket name not found');
+        }
+        const client = optionalApiClient();
+        if (!client) {
+            throw new Error('Client not found');
+        }
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+
+        try {
+            const response = await client.listObjects(bucketName, path);
+            setObjects(response.objects);
+        } catch (err) {
+            setError(`Error listing objects: ${err}`);
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
     }
 
     useEffect(() => {
-        const fetchObjects = async () => {
-            if (!bucketName) {
-                throw new Error('Bucket name not found');
-            }
-            if (!client) {
-                return {objects: [], continuationToken: undefined};
-            }
-            const objects: Object[] = [];
-            let continuationToken: string | undefined = undefined;
-            do {
-                const response = await client.listObjects(bucketName, statePath, continuationToken);
-                objects.push(...response.objects);
-                continuationToken = response.continuationToken;
-            } while (continuationToken);    
-            return objects;
-        }
-        
-        fetchObjects().then((objects) => {
-            setObjects(objects as Object[]);
-        }).catch((err) => {
-            setError(err.message);
-            console.error(err.message);
-        }).finally(() => {
-            setLoading(false);
-        });
+        fetchObjects();
     }, []);
 
     if (!bucketName || !location) {
@@ -75,10 +65,81 @@ const BucketsContentsList = ({ bucketName, path }: BucketContentsListProps) => {
                 <CardTitle>{bucketName}</CardTitle>
             </CardHeader>
             <CardContent>
-                {loading ? <div>Loading...</div> : <ObjectsTable objects={objects} onClick={onClick}/>}
-                {error && <div className="text-red-500">{error}</div>}
+                {loading && (<Spinner className="size-4 animate-spin items-center justify-center"/>)}
+                {!loading && objects &&  (
+                <ObjectsPage objects={objects} onClick={onClick} initialPageNumber={0} pageSize={PAGE_SIZE}/>
+                )}
+                {!loading && error && <div className="text-red-500">{error}</div>}
+
             </CardContent>
         </Card>
+    )
+}
+
+export interface ObjectsPageProps {
+    objects: Object[];
+    onClick: (object: Object) => void
+    initialPageNumber?: number
+    pageSize?: number
+}
+
+const ObjectsPage = ({objects, onClick, initialPageNumber, pageSize}: ObjectsPageProps) => {
+    pageSize = pageSize ?? 100;
+    const [pageNumber, setPageNumber] = useState<number>(initialPageNumber ?? 0);
+
+    const pageObjects = objects.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize);
+
+    return (
+        <>
+        <ObjectsTable objects={pageObjects} onClick={onClick}/>
+        <PaginationComponent pageNumber={pageNumber} pageCount={Math.ceil(objects.length / pageSize)} setPageNumber={setPageNumber} />
+        </>
+    )
+}
+
+const PaginationComponent = ({pageNumber, pageCount, setPageNumber}: {pageNumber: number, pageCount: number, setPageNumber: (pageNumber: number) => void}) => {
+    const pageNumbers: number[] = [];
+    if (pageNumber == 0) {
+        pageNumbers.push(0, 1, 2);
+    } else if (pageNumber == pageCount - 1) {
+        pageNumbers.push(pageCount - 3, pageCount - 2, pageCount - 1);
+    } else {
+        pageNumbers.push(pageNumber - 1, pageNumber, pageNumber + 1);
+    }
+
+    const onClickPrevious = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (pageNumber > 0) {
+            setPageNumber(pageNumber - 1);
+        } else {
+            setPageNumber(0);
+        }
+    }
+    const onClickNext = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (pageNumber < pageCount - 1) {
+            setPageNumber(pageNumber + 1);
+        } else {
+            setPageNumber(pageCount - 1);
+        }
+    }
+    
+    const onClickPage = (e: React.MouseEvent<HTMLAnchorElement>, pageNumber: number) => {
+        e.preventDefault();
+        setPageNumber(pageNumber);
+    }
+    return (
+        <Pagination>
+            <PaginationContent>
+                <PaginationPrevious type="button" onClick={(e) => onClickPrevious(e)} />
+                {pageNumbers.map((pageIndex: number) => (
+                    <PaginationItem key={pageIndex}>
+                        <PaginationLink className={pageIndex === pageNumber ? 'bg-primary text-primary-foreground' : ''} href="#" onClick={(e) => onClickPage(e, pageIndex)}>{pageIndex+1}</PaginationLink>
+                    </PaginationItem>
+                ))}
+                <PaginationNext onClick={(e) => onClickNext(e)} />
+            </PaginationContent>
+        </Pagination>
     )
 }
 

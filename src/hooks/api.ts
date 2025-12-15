@@ -9,16 +9,16 @@ export interface Client {
     deleteObject: (bucketName: string, objectKey: string) => Promise<void>;
 }
 
-export const useOptionalApiClient = (credentials?: Credentials): Client | null => {
+export const optionalApiClient = (credentials?: Credentials): Client | null => {
     try {
-        return useApiClient(credentials);
+        return apiClient(credentials);
     } catch (error: unknown) {
         console.error(error);
         return null;
     }
 }
 
-export const useApiClient = (credentials?: Credentials): Client => {
+export const apiClient = (credentials?: Credentials): Client => {
     credentials = credentials ?? getCredentials() ?? { accessKeyId: '', secretAccessKey: '' };
     const doDelete = async (path: string, headers?: Record<string, string>) => {
         return doReq('DELETE', path, undefined, headers);

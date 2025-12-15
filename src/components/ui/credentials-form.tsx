@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { clearCredentials, getCredentials, setCredentials } from "@/state/credentials"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export interface CredentialsFormProps extends React.ComponentProps<"div"> {
     className?: string;
@@ -25,11 +26,11 @@ export function CredentialsForm({ className, ...props }: CredentialsFormProps) {
     const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
         e.preventDefault();
         if (!accessKeyId || !secretAccessKey) {
-            alert("Please enter both Access Key ID and Secret Access Key");
+          toast.error("Please enter both Access Key ID and Secret Access Key");
             return;
         }
         setCredentials({ accessKeyId, secretAccessKey })
-        alert('credentials updated!')
+        toast.success('Credentials updated!');
         // await submit({ accessKeyId, secretAccessKey });
     }
   return (

@@ -4,13 +4,13 @@ import Layout from "./Layout"
 import BucketPage from "./pages/bucket/page"
 import BucketsPage from './pages/buckets/page'
 import ObjectPage from './pages/object/page'
-// import { Toaster } from 'sonner';
+import { Toaster } from 'sonner';
 
 const Root = () => {
   return (
     <div>
       <div className="h-0 w-0">
-        {/* <Toaster /> */}
+        <Toaster />
       </div>
       <BrowserRouter>
       <Layout>

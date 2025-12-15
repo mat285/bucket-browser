@@ -50,9 +50,13 @@ type Credentials struct {
 }
 
 type Object struct {
-	Name        string `json:"name"`
-	Key         string `json:"key"`
-	IsDirectory bool   `json:"isDirectory"`
+	Name         string      `json:"name"`
+	Key          string      `json:"key"`
+	IsDirectory  bool        `json:"isDirectory"`
+	LastModified time.Time   `json:"lastModified"`
+	Size         int64       `json:"size"`
+	ContentType  string      `json:"contentType"`
+	Metadata     http.Header `json:"metadata" xml:"-"`
 }
 
 type ObjectCacheEntry struct {
