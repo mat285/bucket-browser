@@ -312,9 +312,13 @@ func (s *Server) getNextObjects(ctx context.Context, client *minio.Client, bucke
 		}
 		name := strings.TrimPrefix(obj.Key, prefix)
 		objects = append(objects, Object{
-			Name:        name,
-			Key:         obj.Key,
-			IsDirectory: strings.HasSuffix(obj.Key, "/"),
+			Name:         name,
+			Key:          obj.Key,
+			IsDirectory:  strings.HasSuffix(obj.Key, "/"),
+			Size:         obj.Size,
+			LastModified: obj.LastModified,
+			ContentType:  obj.ContentType,
+			Metadata:     obj.Metadata,
 		})
 	}
 	fmt.Printf("listing objects with limit: %d\n", limit)

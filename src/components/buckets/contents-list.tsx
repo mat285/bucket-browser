@@ -19,7 +19,7 @@ const BucketsContentsList = ({ bucketName, path }: BucketContentsListProps) => {
     
 
     const onClick = async (object: Object) => {
-        const redirectPath = object.isDirectory ? `/bucket/${bucketName}/${object.key}` : `/object/${bucketName}/${object.key}/`;
+        const redirectPath = object.isDirectory ? `/bucket/${bucketName}/${object.key}` : `/object/${bucketName}/${object.key}`;
         // window.location.replace(redirectPath);
         window.location.href = redirectPath;
     }
@@ -171,7 +171,7 @@ const ObjectsTable = ({objects, onClick}: ObjectsTableProps) => {
                         }}
                     >
                         <TableCell>{object.name}</TableCell>
-                        <TableCell>{object.size?? ""}</TableCell>
+                        <TableCell>{formatSize(object.size)}</TableCell>
                         <TableCell>{object.lastModified?? ""}</TableCell>
                         <TableCell>{object.type}</TableCell>
                     </TableRow>
@@ -179,6 +179,21 @@ const ObjectsTable = ({objects, onClick}: ObjectsTableProps) => {
             </TableBody>
         </Table>
     )
+}
+
+const formatSize = (size: number | undefined) => {
+    if (!size) {
+        return "";
+    }
+    if (size < 1024) {
+        return `${size} B`;
+    } else if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(2)} KB`;
+    } else if (size < 1024 * 1024 * 1024) {
+        return `${(size / 1024 / 1024).toFixed(2)} MB`;
+    } else {
+        return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
 }
 
 export default BucketsContentsList;
